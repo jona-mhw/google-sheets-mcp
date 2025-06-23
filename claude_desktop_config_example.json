@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "google-sheets": {
+      "command": "python",
+      "args": ["server.py"],
+      "cwd": "/ruta/absoluta/a/google-sheets-mcp/mcp-server",
+      "env": {
+        "APPS_SCRIPT_URL": "https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec",
+        "DEBUG": "false"
+      }
+    }
+  }
+}
