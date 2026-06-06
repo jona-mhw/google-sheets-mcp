@@ -1,113 +1,67 @@
-# 📊 Google Sheets MCP Server
+# Google Sheets MCP Server
 
-🐍 **Python-based MCP Server** that enables Claude Desktop to interact seamlessly with Google Sheets through Google Apps Script.
+Servidor MCP en Python que permite a Claude (Desktop o cualquier cliente MCP) leer y
+escribir Google Sheets a través de un Google Apps Script desplegado como Web App.
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+## Qué hace
 
-> **🔬 Research Project**: This is an experimental development project demonstrating Model Context Protocol (MCP) capabilities and secure Google API integration. Developed as a proof of concept to explore new ways of connecting AI with productivity tools.
+- Lectura: celdas, rangos y metadatos de hoja.
+- Escritura: celdas y rangos.
+- Utilidad: limpiar rangos, listar hojas, probar la conexión.
 
-## ✨ Features
-
-- 📖 **Read Operations**: Single cells, ranges, and sheet metadata  
-- ✏️ **Write Operations**: Update cells and ranges with data
-- 🧹 **Utility Operations**: Clear ranges and test connections
-- 🔐 **Secure**: Uses Google Apps Script as secure proxy within your own account
-- 🚀 **Easy Setup**: Works with Claude Desktop without complex configurations
-
-## 🔒 Security & Privacy
-
-### **🛡️ Multiple Security Layers**
-
-1. **Google Apps Script (Your Account)**:
-   - Runs in **YOUR Google infrastructure**
-   - Only **YOU** have access to your data
-   - Automatic authentication with your Google session
-   - No exposed OAuth credentials
-
-2. **Model Context Protocol (MCP)**:
-   - Open standard protocol by Anthropic
-   - Secure localhost-only communication
-   - No data transmitted to third parties
-   - Full control over exposed tools
-
-3. **Local Architecture**:
-   - MCP server runs on **YOUR machine**
-   - No data leaves your control
-   - No external servers involved
-
-### **🎯 Why is it Secure?**
+## Cómo funciona
 
 ```
-YOUR DATA → Google Sheets (YOUR account) → Apps Script (YOUR account) → MCP Server (YOUR machine) → Claude Desktop (YOUR machine)
+Cliente MCP  →  servidor MCP (Python, local)  →  Apps Script Web App  →  Google Sheets
 ```
 
-**Result**: Your data NEVER leaves your personal ecosystem.
+El Apps Script corre en tu propia cuenta de Google con tu sesión, así que no expones
+credenciales OAuth ni tokens. El servidor MCP corre en tu máquina.
 
-## 🚀 Quick Start
+## Seguridad — léelo antes de desplegar
 
-### Prerequisites
+El Web App se publica con "Ejecutar como: yo" y acceso "Cualquiera". Eso significa que
+**la URL `/exec` es un endpoint sin autenticación**: quien la conozca puede leer y
+escribir tu hoja. En consecuencia:
 
-- Python 3.8+ installed
-- Claude Desktop installed  
-- Google account with access to Google Sheets and Apps Script
+- Trata la URL del Web App como un secreto. No la publiques ni la commitees.
+- Para algo más que pruebas, añade un token compartido: que el Apps Script exija un
+  parámetro secreto y rechace las peticiones que no lo traigan.
 
-### Installation
+La protección real es que la URL sea privada (e, idealmente, un token); no hay "varias
+capas de seguridad" más allá de eso.
+
+## Requisitos
+
+- Python 3.8+
+- Un cliente MCP (por ejemplo, Claude Desktop)
+- Cuenta de Google con acceso a Sheets y Apps Script
+
+## Instalación
 
 ```bash
-# 1. Clone this repository
 git clone https://github.com/jona-mhw/google-sheets-mcp.git
-cd google-sheets-mcp
-
-# 2. Install Python dependencies
-cd mcp-server
+cd google-sheets-mcp/mcp-server
 pip install -r requirements.txt
-
-# 3. Configure environment variables
 cp .env.example .env
-# Edit .env and add your APPS_SCRIPT_URL
+# edita .env y pon tu APPS_SCRIPT_URL
 ```
 
-### Google Apps Script Setup
+## Apps Script
 
-#### **Step 1: Create Apps Script Project**
+1. En [script.google.com](https://script.google.com) crea un proyecto nuevo.
+2. Pega el contenido de [`apps-script/Code.gs`](apps-script/Code.gs).
+3. Desplegar → Nueva implementación → Aplicación web. Ejecutar como: yo. Acceso: cualquiera.
+4. Copia la URL que termina en `/exec`: esa es tu `APPS_SCRIPT_URL`.
 
-1. Go to [script.google.com](https://script.google.com)
-2. Click "New project"
-3. **Important**: The file name can be anything (`Code.gs`, `main.gs`, `sheets.gs`, etc.)
+Apps Script es gratis hasta 6 horas de ejecución por día, de sobra para uso normal.
 
-#### **Step 2: Copy the Code**
+## Configuración del cliente MCP
 
-1. Delete the default code
-2. Copy **ALL** content from [`apps-script/Code.gs`](apps-script/Code.gs)
-3. Paste it into your project
-4. Save the project (Ctrl+S)
-
-#### **Step 3: Deploy as Web App**
-
-1. Click **"Deploy"** > **"New deployment"**
-2. **Type**: Select **"Web app"**
-3. **Configuration**:
-   - **Execute as**: "Me" (your account)
-   - **Who has access**: "Anyone" 
-4. Click **"Deploy"**
-
-> **⚠️ Costs**: Google Apps Script is **FREE** up to 6 hours of execution time per day. For normal spreadsheet usage, this is more than sufficient.
-
-#### **Step 4: Get the URL**
-
-1. Copy the **Web app URL** (ends with `/exec`)
-2. This is your `APPS_SCRIPT_URL`
-
-### Claude Desktop Configuration
-
-1. **Find your configuration file**:
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
-   - **Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-2. **Add the MCP configuration**:
+Archivo de configuración de Claude Desktop:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -115,9 +69,9 @@ cp .env.example .env
     "google-sheets": {
       "command": "python",
       "args": ["server.py"],
-      "cwd": "/absolute/path/to/google-sheets-mcp/mcp-server",
+      "cwd": "/ruta/absoluta/a/google-sheets-mcp/mcp-server",
       "env": {
-        "APPS_SCRIPT_URL": "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec",
+        "APPS_SCRIPT_URL": "https://script.google.com/macros/s/TU_SCRIPT_ID/exec",
         "DEBUG": "false"
       }
     }
@@ -125,90 +79,26 @@ cp .env.example .env
 }
 ```
 
-**⚠️ Important**: Replace `/absolute/path/to/` with the actual path where you cloned this repository.
+Reinicia el cliente.
 
-**Path examples**:
-- **macOS/Linux**: `/Users/your-username/google-sheets-mcp/mcp-server`
-- **Windows**: `C:\\Users\\your-username\\google-sheets-mcp\\mcp-server`
+## Herramientas
 
-3. **Restart Claude Desktop**
+| Tool | Descripción |
+|------|-------------|
+| `read_cell` | lee una celda |
+| `write_cell` | escribe una celda |
+| `read_range` | lee un rango |
+| `write_range` | escribe un rango |
+| `clear_range` | limpia un rango |
+| `list_sheets` | lista las hojas |
+| `test_connection` | prueba la conexión |
 
-## 🛠️ Available Tools
+## Problemas frecuentes
 
-| Tool | Description | Example Usage |
-|------|-------------|---------------|
-| `read_cell` | Read a single cell | `read_cell("Sheet1", "A1")` |
-| `write_cell` | Write to a cell | `write_cell("Sheet1", "A1", "Hello")` |
-| `read_range` | Read cell range | `read_range("Sheet1", "A1:B5")` |
-| `write_range` | Write to range | `write_range("Sheet1", "A1:B2", data)` |
-| `clear_range` | Clear cell range | `clear_range("Sheet1", "A1:B5")` |
-| `list_sheets` | List all sheets | `list_sheets()` |
-| `test_connection` | Test setup | `test_connection()` |
+- `No module named 'fastmcp'`: `pip install -r requirements.txt`.
+- `APPS_SCRIPT_URL not configured`: revisa que `.env` exista y que la URL sea correcta.
+- Claude no ve el MCP: `cwd` debe ser ruta absoluta; reinicia el cliente.
 
-## 🏗️ Architecture
+## Licencia
 
-```
-Claude Desktop → Python MCP Server → Google Apps Script → Google Sheets
-     ↑                                                          ↓
-     ←←←←←←←←←← JSON Response ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
-```
-
-**Why this approach?**
-- 🔐 **No complex OAuth**: Apps Script uses your existing Google session
-- 🎯 **Focused**: Designed specifically for Google Sheets operations  
-- 🚀 **Scalable**: Easy to add new functionality
-- 💰 **Free**: Uses Google's free Apps Script infrastructure
-- 🛡️ **Private**: Everything stays within your personal account
-
-## ✅ Verification
-
-After setup, ask Claude:
-
-> "Test the Google Sheets connection"
-
-Claude should be able to use the `test_connection()` tool and show you it's connected.
-
-## 🔍 Troubleshooting
-
-### Error: "No module named 'fastmcp'"
-```bash
-pip install -r requirements.txt
-```
-
-### Error: "APPS_SCRIPT_URL not configured"
-- Verify that the `.env` file exists
-- Verify that the URL is correct
-- Ensure the Apps Script is deployed as Web App
-
-### Claude doesn't see the MCP
-- Verify that the `cwd` path is absolute and correct
-- Restart Claude Desktop completely
-- Check that the JSON configuration is valid
-
-### Apps Script permission errors
-- Ensure the Apps Script is deployed with "Anyone" permissions
-- Verify that the Spreadsheet exists and you have access
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [FastMCP](https://github.com/jlowin/fastmcp)
-- Integrates with [Google Apps Script](https://script.google.com/)
-- Part of the [Model Context Protocol](https://modelcontextprotocol.io/) ecosystem
-
----
-
-**Created by**: Jona  
-**Purpose**: Connect Claude with Google Sheets efficiently and securely  
-**Type**: Research & Development Project - MCP Proof of Concept
+MIT. Ver [LICENSE](LICENSE). Construido sobre [FastMCP](https://github.com/jlowin/fastmcp).
